@@ -12,6 +12,7 @@ import logo from '../../assets/logo.svg';
 
 export default function LoginForm() {
   const [showAlert, setShowAlert] = useState(false);
+  const [errors, setErrors] = useState({ email: false, password: false });
   const validateForm = (event) => {
     event.preventDefault()
     const data = new FormData(event.currentTarget);
@@ -19,7 +20,25 @@ export default function LoginForm() {
     const password = data.get('password');
 
     // Add validation code here
+    const emailValidator = require("email-validator");
+    const isValidEmail = emailValidator.validate(email);
 
+    const isValidPassword = (password) => {
+      return (
+        password.length >= 8 &&
+        /[A-Z]/.test(password) &&
+        /[a-z]/.test(password) &&
+        /[0-9]/.test(password) &&
+        /[^A-Za-z0-9]/.test(password)
+      );
+    }
+
+    setErrors({
+      email: !isValidEmail,
+      password: !isValidPassword(password)
+    });
+
+    return isValidEmail && isValidPassword(password);
   }
 
   const handleSubmit = (event) => {
@@ -29,22 +48,23 @@ export default function LoginForm() {
       email: data.get('email'),
       password: data.get('password'),
     });
-    validateForm(event);
-    setShowAlert("Login Successful");
+    if (validateForm(event)) {
+      setShowAlert(true);
+    }
   };
 
   return (
     <>
-      {showAlert &&
-        <Snackbar
-          open={showAlert}
-          autoHideDuration={6000}
-          onClose={() => setShowAlert(false)}
-          message={showAlert}
-        >
-          <Alert>{showAlert}</Alert>
-        </Snackbar>
-      }
+      <Snackbar
+        open={showAlert}
+        autoHideDuration={6000}
+        onClose={() => setShowAlert(false)}
+      >
+        <Alert onClose={() => setShowAlert(false)} severity="success">
+          Login Successful
+        </Alert>
+      </Snackbar>
+      
       <Grid
         item
         xs={false}
@@ -77,7 +97,12 @@ export default function LoginForm() {
           <Typography component="h1" variant="h5">
             Sign in
           </Typography>
-          <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 1 }}>
+          <Box component="form" 
+            noValidate 
+            onSubmit={handleSubmit} 
+            sx={{ '& .MuiTextField-root': { m: 1, width: '25ch' } }}
+            autoComplete="off"
+          >
             <TextField
               margin="normal"
               required
@@ -87,6 +112,8 @@ export default function LoginForm() {
               name="email"
               autoComplete="email"
               autoFocus
+              error={errors.email}
+              helperText={errors.email ? "Invalid email" : ""}
             />
             <TextField
               margin="normal"
@@ -97,6 +124,9 @@ export default function LoginForm() {
               type="password"
               id="password"
               autoComplete="current-password"
+              autoFocus
+              error={errors.password}
+              helperText={errors.password ? "Invalid password" : ""}
             />
             <Button
               type="submit"
